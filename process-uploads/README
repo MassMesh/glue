@@ -1,0 +1,22 @@
+
+The process-uploads.sh script will process uploads from the ci pipeline
+connected to the mm-toolbox repository. It is intended to run via cron as an
+unpriviliged user, e.g.:
+
+# crontab -u uploader -l
+
+* * * * * /usr/local/process-uploads/process-uploads.sh
+
+The process-uploads.sh script is silent when it does nothing; when it updates
+the package repository it will print some output.
+
+The script loops for uploads in the ~uploader/uploads/ directory. It creates a
+staging area for the repository in ~uploaders/repo-staging/. It will move
+processed uploads to the ~uploader/uploads-processed/ directory. It will rsync
+the repo-staging area to /var/www/html/packages/snapshots/${profile}/${device},
+with the --delete option.
+
+When run with the '--noop' argument, the script will update the repository
+staging area and run the rsync to the public repository directory with the
+--dry-run option. It will not move the processed directories from
+~uploader/uploads/ to ~uploader/uploads-processed/.
