@@ -5,7 +5,7 @@ unpriviliged user, e.g.:
 
 # crontab -u uploader -l
 
-* * * * * /usr/local/process-uploads/process-uploads.sh
+* * * * * /usr/local/glue/process-uploads/process-uploads.sh
 
 The process-uploads.sh script is silent when it does nothing; when it updates
 the package repository it will print some output.
@@ -20,3 +20,7 @@ When run with the '--noop' argument, the script will update the repository
 staging area and run the rsync to the public repository directory with the
 --dry-run option. It will not move the processed directories from
 ~uploader/uploads/ to ~uploader/uploads-processed/.
+
+The 'mkhash.c' file needs to be compiled before everything will work:
+
+  $ gcc mkhash.c -o mkhash
