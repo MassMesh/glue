@@ -10,13 +10,18 @@ TMP_DIR="/var/tmp"
 UPLOADER_DIR="/home/uploader/uploads"
 UPLOADER_PROCESSED_DIR="/home/uploader/uploads-processed"
 REPO_STAGING_DIR="/home/uploader/repo-staging"
-REPO_DIR="/var/www/html/packages/snapshots"
+REPO_DIR="/var/www/html/snapshots/packages"
 
 USER=uploader
 
 update_packages() {
   device=$1
   profile=$2
+  arch=$3
+
+  REPO="${REPO_DIR}/${arch}/generic"
+  mkdir -p "${REPO}"
+
   PWD=`pwd`
   cd "${REPO_STAGING_DIR}/${profile}/${device}"
 
@@ -36,16 +41,16 @@ update_packages() {
     EXTRA="--dry-run "
   fi
   FILE_COUNT_IN_STAGING=`ls -C1 ${REPO_STAGING_DIR}/${profile}/${device} -C1|wc -l`
-  FILE_COUNT_IN_REPO=`ls -C1 ${REPO_DIR}/${profile}/${device} -C1|wc -l`
+  FILE_COUNT_IN_REPO=`ls -C1 ${REPO} -C1|wc -l`
   if [[ $FILE_COUNT_IN_STAGING < $FILE_COUNT_IN_REPO ]]; then
     echo
-    echo "!!!!!! ERROR: staging (${REPO_STAGING_DIR}/${profile}/${device}) contains fewer files than the repository (${REPO_DIR}/${profile}/${device})"
+    echo "!!!!!! ERROR: staging (${REPO_STAGING_DIR}/${profile}/${device}) contains fewer files than the repository (${REPO})"
     echo "Not updating repository, and switching to dry run mode"
     echo
     NOOP="--noop"
     EXTRA="--dry-run "
   fi
-  rsync -aAHXv --delete $EXTRA"${REPO_STAGING_DIR}/${profile}/${device}/" "${REPO_DIR}/${profile}/${device}/"
+  rsync -aAHXv --delete $EXTRA"${REPO_STAGING_DIR}/${profile}/${device}/" "${REPO}/"
   cd "${PWD}"
 }
 
@@ -107,9 +112,16 @@ main() {
         echo "profile file for ${device} not found, skipping ${i}"
         continue
       fi
+      # determine arch
+      arch=`ls ${device}.arch.* 2>/dev/null || true`
+      arch=${arch##${device}.arch.}
+      if [[ -z "${arch}" ]]; then
+        echo "arch file for ${device} not found, skipping ${i}"
+        continue
+      fi
       mkdir -p "${REPO_STAGING_DIR}/${profile}/${device}"
       cp -p $device/*.ipk "${REPO_STAGING_DIR}/${profile}/${device}"
-      update_packages "${device}" "${profile}"
+      update_packages "${device}" "${profile}" "${arch}"
       if [[ -z "$NOOP" ]]; then
         cd ${UPLOADER_DIR}
         mkdir -p ${UPLOADER_PROCESSED_DIR}
