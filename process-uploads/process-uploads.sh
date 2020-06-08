@@ -71,9 +71,9 @@ update_packages() {
   fi
   FILE_COUNT_IN_STAGING=`ls -C1 ${REPO_STAGING_DIR}/${profile}/${device}|wc -l`
   FILE_COUNT_IN_REPO=`ls -C1 ${REPO}|wc -l`
-  if [[ $FILE_COUNT_IN_STAGING < $FILE_COUNT_IN_REPO ]]; then
+  if [[ $FILE_COUNT_IN_STAGING -lt $FILE_COUNT_IN_REPO ]]; then
     echo
-    echo "!!!!!! ERROR: staging (${REPO_STAGING_DIR}/${profile}/${device}) contains fewer files than the repository (${REPO})"
+    echo "!!!!!! ERROR: staging (${REPO_STAGING_DIR}/${profile}/${device}) contains fewer files ($FILE_COUNT_IN_STAGING) than the repository (${REPO}) ($FILE_COUNT_IN_REPO)"
     echo "Not updating repository, and switching to dry run mode"
     echo
     NOOP="--noop"
@@ -119,6 +119,7 @@ process_package_uploads() {
       continue
     fi
     cd "${i}"
+    echo "Processing ${UPLOADER_DIR}/${i}"
     for j in `ls *.uploaded 2>/dev/null || true`; do
       device=${j%%.uploaded}
       if [ ! -d "${device}" ]; then
@@ -147,6 +148,7 @@ process_package_uploads() {
         mkdir -p ${UPLOADER_PROCESSED_DIR}
         mv "${i}" "${UPLOADER_PROCESSED_DIR}/"
       fi
+      echo "Processing ${UPLOADER_DIR}/${i} complete"
     done
     cd "${UPLOADER_DIR}"
   done
