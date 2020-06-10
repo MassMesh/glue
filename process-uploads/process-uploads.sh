@@ -12,7 +12,8 @@ REPO_DIR="/var/www/html/snapshots/packages"
 
 IMAGE_UPLOADER_DIR="/home/uploader/image-uploads"
 IMAGE_UPLOADER_PROCESSED_DIR="/home/uploader/image-uploads-processed"
-IMAGE_DIR="/var/www/html/snapshots/images"
+SNAPSHOTS_IMAGE_DIR="/var/www/html/snapshots"
+EXPERIMENTAL_IMAGE_DIR="/var/www/html/experimental"
 
 USER=uploader
 
@@ -87,8 +88,13 @@ update_images() {
   dir=$1
   profile=$2
   device=$3
+  branch=$4
 
-  DEST="${IMAGE_DIR}/${profile}/${device}"
+  if [[ "${branch}" == "master" ]]; then
+    DEST="${SNAPSHOTS_IMAGE_DIR}/images/${profile}/${device}"
+  else
+    DEST="${EXPERIMENTAL_IMAGE_DIR}/images/${branch}/${profile}/${device}"
+  fi
   mkdir -p "${DEST}"
 
   EXTRA=""
@@ -176,7 +182,14 @@ process_image_uploads() {
         echo "profile file for ${device} not found, skipping ${i}"
         continue
       fi
-      update_images "${IMAGE_UPLOADER_DIR}/${i}" "${profile}" "${device}"
+      # determine branch
+      branch=`ls ${device}.branch.* 2>/dev/null || true`
+      branch=${branch##${device}.branch.}
+      if [[ -z "${branch}" ]]; then
+        echo "branch file for ${device} not found, skipping ${i}"
+        continue
+      fi
+      update_images "${IMAGE_UPLOADER_DIR}/${i}" "${profile}" "${device}" "${branch}"
       if [[ -z "$NOOP" ]]; then
         cd ${IMAGE_UPLOADER_DIR}
         mkdir -p ${IMAGE_UPLOADER_PROCESSED_DIR}
