@@ -5,15 +5,15 @@ set -eo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 TMP_DIR="/var/tmp"
-UPLOADER_DIR="/home/uploader/uploads"
-UPLOADER_PROCESSED_DIR="/home/uploader/uploads-processed"
-REPO_STAGING_DIR="/home/uploader/repo-staging"
-REPO_DIR="/var/www/html/snapshots/packages"
+UPLOADER_DIR="/home/uploader/package-uploads"
+UPLOADER_PROCESSED_DIR="/home/uploader/package-uploads-processed"
+REPO_STAGING_BASE="/home/uploader/package-repo-staging"
 
 IMAGE_UPLOADER_DIR="/home/uploader/image-uploads"
 IMAGE_UPLOADER_PROCESSED_DIR="/home/uploader/image-uploads-processed"
-SNAPSHOTS_IMAGE_DIR="/var/www/html/snapshots"
-EXPERIMENTAL_IMAGE_DIR="/var/www/html/experimental"
+
+SNAPSHOTS_DIR="/var/www/html/snapshots"
+EXPERIMENTAL_DIR="/var/www/html/experimental"
 
 USER=uploader
 
@@ -48,12 +48,22 @@ update_packages() {
   device=$1
   profile=$2
   arch=$3
+  branch=$4
 
-  REPO="${REPO_DIR}/${arch}/generic"
+  if [[ "${branch}" == "master" ]]; then
+    REPO="${SNAPSHOTS_DIR}/packages/${arch}/generic"
+  else
+    REPO="${EXPERIMENTAL_DIR}/packages/${branch}/${arch}/generic"
+  fi
   mkdir -p "${REPO}"
 
   PWD=`pwd`
-  cd "${REPO_STAGING_DIR}/${profile}/${device}"
+  REPO_STAGING_DIR="${REPO_STAGING_BASE}/${branch}/${profile}/${device}"
+  mkdir -p "${REPO_STAGING_DIR}"
+
+  cp -p $device/*.ipk "${REPO_STAGING_DIR}"
+
+  cd "${REPO_STAGING_DIR}"
 
   # what follows is borrowed from package/Makefile in the openwrt SDK
   # the mkhash binary needs to be built and in the path. The c source is in this
@@ -70,17 +80,17 @@ update_packages() {
   if [[ -n "$NOOP" ]]; then
     EXTRA="--dry-run "
   fi
-  FILE_COUNT_IN_STAGING=`ls -C1 ${REPO_STAGING_DIR}/${profile}/${device}|wc -l`
+  FILE_COUNT_IN_STAGING=`ls -C1 ${REPO_STAGING_DIR}|wc -l`
   FILE_COUNT_IN_REPO=`ls -C1 ${REPO}|wc -l`
   if [[ $FILE_COUNT_IN_STAGING -lt $FILE_COUNT_IN_REPO ]]; then
     echo
-    echo "!!!!!! ERROR: staging (${REPO_STAGING_DIR}/${profile}/${device}) contains fewer files ($FILE_COUNT_IN_STAGING) than the repository (${REPO}) ($FILE_COUNT_IN_REPO)"
+    echo "!!!!!! ERROR: staging (${REPO_STAGING_DIR}) contains fewer files ($FILE_COUNT_IN_STAGING) than the repository (${REPO}) ($FILE_COUNT_IN_REPO)"
     echo "Not updating repository, and switching to dry run mode"
     echo
     NOOP="--noop"
     EXTRA="--dry-run "
   fi
-  rsync -aAHXv --delete $EXTRA"${REPO_STAGING_DIR}/${profile}/${device}/" "${REPO}/"
+  rsync -aAHXv --delete $EXTRA"${REPO_STAGING_DIR}/" "${REPO}/"
   cd "${PWD}"
 }
 
@@ -91,9 +101,9 @@ update_images() {
   branch=$4
 
   if [[ "${branch}" == "master" ]]; then
-    DEST="${SNAPSHOTS_IMAGE_DIR}/images/${profile}/${device}"
+    DEST="${SNAPSHOTS_DIR}/images/${profile}/${device}"
   else
-    DEST="${EXPERIMENTAL_IMAGE_DIR}/images/${branch}/${profile}/${device}"
+    DEST="${EXPERIMENTAL_DIR}/images/${branch}/${profile}/${device}"
   fi
   mkdir -p "${DEST}"
 
@@ -146,9 +156,14 @@ process_package_uploads() {
         echo "arch file for ${device} not found, skipping ${i}"
         continue
       fi
-      mkdir -p "${REPO_STAGING_DIR}/${profile}/${device}"
-      cp -p $device/*.ipk "${REPO_STAGING_DIR}/${profile}/${device}"
-      update_packages "${device}" "${profile}" "${arch}"
+      # determine branch
+      branch=`ls ${device}.branch.* 2>/dev/null || true`
+      branch=${branch##${device}.branch.}
+      if [[ -z "${branch}" ]]; then
+        echo "branch file for ${device} not found, skipping ${i}"
+        continue
+      fi
+      update_packages "${device}" "${profile}" "${arch}" "${branch}"
       if [[ -z "$NOOP" ]]; then
         cd ${UPLOADER_DIR}
         mkdir -p ${UPLOADER_PROCESSED_DIR}
