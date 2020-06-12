@@ -25,27 +25,39 @@ What does the script do?
 
 Packages:
 
-The script looks for uploads in the ~uploader/uploads/ directory. It creates a
-staging area for the repository in ~uploaders/repo-staging/. It will rsync the
-repo-staging area to /var/www/html/snapshots/packages/${arch}/generic, with the
---delete option. If that all works without error, it will then move processed
-uploads to the ~uploader/uploads-processed/ directory.
+The script looks for uploads in the ~uploader/package-uploads/ directory. It
+creates a staging area for the repository in
+~uploaders/package-repo-staging/${branch}. After generating the necessary
+repository files, it will rsync the package-repo-staging/${branch} directory to
+/var/www/html/snapshots/packages/${arch}/generic (master branch) or
+/var/www/html/experimental/packages/${branch}/${arch}/generic (any other
+branch), with the --delete option.
+
+If there are no errors, it will then move processed uploads to the
+~uploader/package-uploads-processed/ directory. If there are any errors, the
+script will revert to --noop mode (see below) and leave the directory in the
+~uploader/package-uploads/ directory.
 
 Images:
 
 The script looks for uploads in the ~uploader/image-uploads/ directory. If the
 uploaded directory contains at least as many entries as the destination
 directory, it will rsync the uploaded directory to
-/var/www/html/snapshots/images/${profile}/${device}, with the --delete option.
-If that all works without error, it will then move processed uploads to the
-~uploader/image-uploads-processed/ directory.
+/var/www/html/snapshots/images/${profile}/${device} (master branch) or
+/var/www/html/experimental/images/${branch}/${profile}/${device} (any other
+branch), with the --delete option.
+
+If there are no errors, it will then move processed uploads to the
+~uploader/image-uploads-processed/ directory. If there are any errors, the
+script will revert to --noop mode (see below) and leave the directory in the
+~uploader/image-uploads/ directory.
 
 The --noop argument:
 
 When run with the '--noop' argument, the script will update the package
 repository staging area and run the rsync to the public repository directory
 with the --dry-run option. It will not move the processed directories from
-~uploader/uploads/ to ~uploader/uploads-processed/. Similarly for images: the
-rsync to the destination directory will be run with the --dry-run option, and
-the processed directories will not be moved from ~uploader/image-uploads to
-~uploader/image-uploads-processed/.
+~uploader/package-uploads/ to ~uploader/package-uploads-processed/. Similarly
+for images: the rsync to the destination directory will be run with the
+--dry-run option, and the processed directories will not be moved from
+~uploader/image-uploads to ~uploader/image-uploads-processed/.
