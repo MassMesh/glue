@@ -1,0 +1,24 @@
+diff --git a/process-uploads/process-uploads.sh b/process-uploads/process-uploads.sh
+index eede9b5..d702049 100755
+--- a/process-uploads/process-uploads.sh
++++ b/process-uploads/process-uploads.sh
+@@ -80,6 +80,19 @@ update_packages() {
+   if [[ -n "$NOOP" ]]; then
+     EXTRA="--dry-run "
+   fi
++
++  # Sign the Packages file with our signing subkey
++  set +e
++  gpg --batch -u FIXME-THE-KEY-ID -sab Packages
++  if [[ $? -ne 0 ]]; then
++    echo "Key passphrase not loaded. Please run startup-agent.sh manually."
++    echo "Not updating repository, and switching to dry run mode."
++    echo
++    NOOP="--noop"
++    EXTRA="--dry-run "
++  fi
++  set -e
++
+   FILE_COUNT_IN_STAGING=`ls -C1 ${REPO_STAGING_DIR}|wc -l`
+   FILE_COUNT_IN_REPO=`ls -C1 ${REPO}|wc -l`
+   if [[ $FILE_COUNT_IN_STAGING -lt $FILE_COUNT_IN_REPO ]]; then

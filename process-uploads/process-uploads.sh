@@ -5,12 +5,12 @@ set -eo pipefail
 
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 TMP_DIR="/var/tmp"
-UPLOADER_DIR="/home/uploader/package-uploads"
-UPLOADER_PROCESSED_DIR="/home/uploader/package-uploads-processed"
-REPO_STAGING_BASE="/home/uploader/package-repo-staging"
+UPLOADER_DIR="$HOME/package-uploads"
+UPLOADER_PROCESSED_DIR="$HOME/package-uploads-processed"
+REPO_STAGING_BASE="$HOME/package-repo-staging"
 
-IMAGE_UPLOADER_DIR="/home/uploader/image-uploads"
-IMAGE_UPLOADER_PROCESSED_DIR="/home/uploader/image-uploads-processed"
+IMAGE_UPLOADER_DIR="$HOME/image-uploads"
+IMAGE_UPLOADER_PROCESSED_DIR="$HOME/image-uploads-processed"
 
 SNAPSHOTS_DIR="/var/www/html/snapshots"
 EXPERIMENTAL_DIR="/var/www/html/experimental"
@@ -37,6 +37,14 @@ dependencies() {
   if [[ ! -f "${DIR}/ipkg-make-index.sh" ]]; then
     MISSING_DEP=1
     echo "Missing dependency: unable to find ./ipkg-make-index.sh"
+  fi
+  if [[ ! -f "${DIR}/usign" ]]; then
+    MISSING_DEP=1
+    echo "Missing dependency: unable to find ./usign, please build it, see README"
+  fi
+  if [[ ! -f "$HOME/keys/secret.key" ]]; then
+    MISSING_DEP=1
+    echo "Missing dependency: unable to find $HOME/keys/secret.key, see README"
   fi
   if [[ $MISSING_DEP -ne 0 ]]; then
     exit 1
@@ -80,12 +88,16 @@ update_packages() {
   if [[ -n "$NOOP" ]]; then
     EXTRA="--dry-run "
   fi
+
+  # Sign the Packages file with our usign key
+  ${DIR}/usign -S -m Packages -s ~uploader/keys/secret.key -x Packages.sig -c "signature from MassMesh Packaging team"
+
   FILE_COUNT_IN_STAGING=`ls -C1 ${REPO_STAGING_DIR}|wc -l`
   FILE_COUNT_IN_REPO=`ls -C1 ${REPO}|wc -l`
   if [[ $FILE_COUNT_IN_STAGING -lt $FILE_COUNT_IN_REPO ]]; then
     echo
     echo "!!!!!! ERROR: staging (${REPO_STAGING_DIR}) contains fewer files ($FILE_COUNT_IN_STAGING) than the repository (${REPO}) ($FILE_COUNT_IN_REPO)"
-    echo "Not updating repository, and switching to dry run mode"
+    echo "Not updating repository, and switching to dry run mode."
     echo
     NOOP="--noop"
     EXTRA="--dry-run "
@@ -126,7 +138,7 @@ update_images() {
 
 process_package_uploads() {
   # The sub directories in $UPLOADER_DIR are created with
-  #   `mktemp -d -p /home/uploader/uploads ci.XXXXXXXX`
+  #   `mktemp -d -p $HOME/uploads ci.XXXXXXXX`
   cd "${UPLOADER_DIR}"
   # Iterate over directories in $UPLOADER_DIR, sorted by oldest first
   for i in `ls -cd -tr ci.* 2>/dev/null || true`; do

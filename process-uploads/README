@@ -9,12 +9,30 @@ repositores. It is intended to run via cron as an unpriviliged user, e.g.:
 
 Installation:
 
-The 'mkhash.c' file needs to be compiled:
+The 'mkhash.c' file needs to be compiled (leave the binary in this directory):
 
   $ gcc mkhash.c -o mkhash
 
+The 'usign' program needs to be compiled and copied to this directory:
+
+  $ git clone https://git.openwrt.org/project/usign.git usign.git
+  $ cd usign.git/
+  $ cmake .
+  $ make
+  $ mv usign ..
+  $ rm -rf usign.git
+
 Then copy all the files in this directory to the machine that will run the cron
-job, and install the cron job. Make sure the `/home/uploader` directory exists.
+job, and install the cron job. Make sure the `/home/uploader` directory exists
+and is owned by the `uploader` user.
+
+Generate a usign keypair and make the public key available to the world:
+
+  $ ./usign -G -c "Your Signing Key Description" -s secret.key -p public.key
+  $ mkdir ~uploader/keys; chmod 700 ~uploader/keys
+  $ mv secret.key ~uploader/keys/
+  $ mv public.key ~uploader/keys/
+  $ sudo cp ~uploader/keys/public.key /var/www/html/
 
 Execution:
 
