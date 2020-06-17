@@ -7,14 +7,14 @@ The process-uploads.sh script is silent when it does nothing; when it updates a 
 
 ## Packages:
 
-The script looks for uploads in the `~uploader/package-uploads/` directory. It creates a staging area for the repository in `~uploaders/package-repo-staging/${branch}`. After generating the necessary repository files, it will rsync the `~uploader/package-repo-staging/${branch}` directory to `/var/www/html/snapshots/packages/${arch}/generic` (master branch) or `/var/www/html/experimental/packages/${branch}/${arch}/generic` (any other branch), with the --delete argument.
+The script looks for uploads in the `~uploader/package-uploads/` directory. It creates a staging area for the repository in `~uploaders/package-repo-staging/${branch}`. After generating the necessary repository files, it will rsync the `~uploader/package-repo-staging/${branch}` directory to `/var/www/html/snapshots/packages/${arch}/generic` (main branch) or `/var/www/html/experimental/packages/${branch}/${arch}/generic` (any other branch), with the --delete argument.
 
 If there are no errors, it will then move processed uploads to the `~uploader/package-uploads-processed/` directory. If there are any errors, the script will revert to `no-op` mode (see below) and leave the directory in the
 `~uploader/package-uploads/` directory.
 
 ## Images:
 
-The script looks for uploads in the `~uploader/image-uploads/` directory. If the uploaded directory contains at least as many entries as the destination directory, it will rsync the uploaded directory to `/var/www/html/snapshots/images/${profile}/${device}` (master branch) or `/var/www/html/experimental/images/${branch}/${profile}/${device}` (any other branch), with the --delete argument.
+The script looks for uploads in the `~uploader/image-uploads/` directory. If the uploaded directory contains at least as many entries as the destination directory, it will rsync the uploaded directory to `/var/www/html/snapshots/images/${profile}/${device}` (main branch) or `/var/www/html/experimental/images/${branch}/${profile}/${device}` (any other branch), with the --delete argument.
 
 If there are no errors, it will then move processed uploads to the `~uploader/image-uploads-processed/` directory. If there are any errors, the script will revert to 'no-op` mode (see below) and leave the directory in the `~uploader/image-uploads/` directory.
 

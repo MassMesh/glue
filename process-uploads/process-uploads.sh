@@ -58,7 +58,7 @@ update_packages() {
   arch=$3
   branch=$4
 
-  if [[ "${branch}" == "master" ]]; then
+  if [[ "${branch}" == "main" ]]; then
     REPO="${SNAPSHOTS_DIR}/packages/${arch}/generic"
   else
     REPO="${EXPERIMENTAL_DIR}/packages/${branch}/${arch}/generic"
@@ -112,7 +112,7 @@ update_images() {
   device=$3
   branch=$4
 
-  if [[ "${branch}" == "master" ]]; then
+  if [[ "${branch}" == "main" ]]; then
     DEST="${SNAPSHOTS_DIR}/images/${profile}/${device}"
   else
     DEST="${EXPERIMENTAL_DIR}/images/${branch}/${profile}/${device}"
